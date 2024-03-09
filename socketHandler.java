@@ -36,14 +36,19 @@ public class socketHandler extends Thread {
 				try {
 
 					String obj_str = (String) inFromClient.readObject();
+
 					switch (obj_str) {
 						case "1" -> {
 							Object obj = inFromClient.readObject();
 							if ( obj instanceof Student) {
 								Student s = (Student) obj;
-
-								sql.insert_statement(s.id, s.name, s.phone);
-								outToClient.writeBytes("it was ok everything here\n");
+								String answer = sql.check_if_user_exist(s.id);
+								if (answer.equals("student doesn't exist!")) {
+									sql.insert_statement(s.id, s.name, s.phone);
+									outToClient.writeBytes("it was ok everything here\n");
+								} else {
+									outToClient.writeBytes("student with id "+ s.id +" already exists\n");
+								}
 							}
 						}
 						case "2" -> {
@@ -55,18 +60,26 @@ public class socketHandler extends Thread {
 						}
 						case "3" -> {
 							Student obj = (Student) inFromClient.readObject();
-							outToClient.writeBytes(obj.id + " deleted\n");
-							sql.delete_statement(obj.id);
+							String answer = sql.check_if_user_exist(obj.id);
+							if (answer.equals("student doesn't exist!")) {
+								outToClient.writeBytes(answer + "\n");
+							} else {
+								outToClient.writeBytes("student with id "+obj.id + " deleted\n");
+								sql.delete_statement(obj.id);
+							}
+
 
 						}
 						case "4" -> {
 							Student obj = (Student) inFromClient.readObject();
-							String answer = sql.check_if_user_exist(obj.id);
-							if (answer.equals("student doesn't exist!")) {
-								outToClient.writeBytes(answer +"\n");
-							} else {
-								sql.update_statement(obj.name,obj.id,obj.phone);
-								outToClient.writeBytes("student updated\n");
+							if ( obj instanceof Student) {
+								String answer = sql.check_if_user_exist(obj.id);
+								if (answer.equals("student doesn't exist!")) {
+									outToClient.writeBytes(answer + "\n");
+								} else {
+									sql.update_statement(obj.name, obj.id, obj.phone);
+									outToClient.writeBytes("student updated\n");
+								}
 							}
 						}
 					}
